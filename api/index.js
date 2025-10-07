@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.json({ mensaje: "Bienvenido a API SL IEA" });
+  res.json({ mensaje: "Bienvenido a API SL IEA - Prueba" });
 });
 
 app.listen(PORT, () => {
