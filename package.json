@@ -2,7 +2,7 @@
   "name": "api-sl-iea",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "api/server.js",
   "type": "module",
   "scripts": {
     "start": "node api/server.js",
