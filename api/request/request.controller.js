@@ -265,11 +265,7 @@ export const updateRequestStatus = async (req, res) => {
 
     // Notificar al cliente sobre el cambio de estado
     try {
-      notifyRequestStatusChange(
-        clientId.toString(),
-        request,
-        previousStatus
-      );
+      notifyRequestStatusChange(clientId.toString(), request, previousStatus);
     } catch (socketError) {
       console.error(
         "⚠️ Error al enviar notificación WebSocket:",

@@ -170,7 +170,9 @@ export const notifyClientRequestUpdate = (clientId, request) => {
   };
 
   io.to("admins").emit("notification", adminNotification);
-  console.log(`📢 Notificación enviada a administradores: Solicitud actualizada`);
+  console.log(
+    `📢 Notificación enviada a administradores: Solicitud actualizada`
+  );
 };
 
 /**
@@ -218,7 +220,9 @@ export const notifyRequestStatusChange = (
   // También notificar a los admins
   const adminNotification = {
     type: "request_status_change",
-    message: `Estado de solicitud ${request._id} cambió a "${getStatusLabel(request.status)}"`,
+    message: `Estado de solicitud ${request._id} cambió a "${getStatusLabel(
+      request.status
+    )}"`,
     request: {
       _id: request._id,
       type: request.type,
