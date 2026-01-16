@@ -2,6 +2,7 @@ import Antenna from "./antenna.dao.js";
 import User from "../auth/auth.dao.js";
 import Supplier from "../supplier/supplier.dao.js";
 import Plan from "../plan/plan.dao.js";
+import { PURCHASE_TYPE, ANTENNA_STATUS } from "./antenna.constants.js";
 
 /**
  * Crear una nueva antenna
@@ -13,17 +14,22 @@ export const createAntenna = async (req, res) => {
       kitNumber,
       client,
       supplier,
+      type,
       purchaseType,
       totalInstallments,
       installmentAmount,
+      plan,
+      status,
+      activationDate,
+      deactivationDate,
       notes,
     } = req.body;
 
     // Validar campos requeridos
-    if (!kitNumber || !client || !supplier || !purchaseType) {
+    if (!kitNumber || !client || !supplier || !type || !purchaseType) {
       return res.status(400).json({
         message:
-          "Número de kit, cliente, proveedor y tipo de compra son requeridos",
+          "Número de kit, cliente, proveedor, tipo de antena y tipo de compra son requeridos",
       });
     }
 
@@ -51,9 +57,19 @@ export const createAntenna = async (req, res) => {
       });
     }
 
+    // Verificar que el plan existe si se especifica
+    if (plan) {
+      const planExists = await Plan.findById(plan);
+      if (!planExists) {
+        return res.status(404).json({
+          message: "El plan especificado no existe",
+        });
+      }
+    }
+
     // Validar datos de cuotas
     if (
-      purchaseType === "installments" &&
+      purchaseType === PURCHASE_TYPE.INSTALLMENTS &&
       (!totalInstallments || totalInstallments <= 0)
     ) {
       return res.status(400).json({
@@ -68,11 +84,18 @@ export const createAntenna = async (req, res) => {
       kitNumber,
       client,
       supplier,
+      type,
       purchaseType,
       notes,
     };
 
-    if (purchaseType === "installments") {
+    // Agregar campos opcionales si están presentes
+    if (plan) antennaData.plan = plan;
+    if (status) antennaData.status = status;
+    if (activationDate) antennaData.activationDate = activationDate;
+    if (deactivationDate) antennaData.deactivationDate = deactivationDate;
+
+    if (purchaseType === PURCHASE_TYPE.INSTALLMENTS) {
       antennaData.totalInstallments = totalInstallments;
       antennaData.installmentAmount = installmentAmount || 0;
       antennaData.paidInstallments = 0;

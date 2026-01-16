@@ -29,7 +29,7 @@ router.get("/kit/:kitNumber", getAntennaByKitNumber);
 // Obtener una antenna por ID
 router.get("/:id", getAntennaById);
 
-// Actualizar una antenna
+// Actualizar una antenna - Verificar si es PUT o PATCH lo más adecuado
 router.put("/:id", updateAntenna);
 
 // Activar una antenna

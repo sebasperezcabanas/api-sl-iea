@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import {
+  ANTENNA_STATUS,
+  ANTENNA_TYPE,
+  PURCHASE_TYPE,
+} from "./antenna.constants.js";
 
 const antennaSchema = new mongoose.Schema(
   {
@@ -23,9 +28,14 @@ const antennaSchema = new mongoose.Schema(
       ref: "Supplier",
       required: true,
     },
+    type: {
+      type: String,
+      enum: Object.values(ANTENNA_TYPE),
+      required: true,
+    },
     purchaseType: {
       type: String,
-      enum: ["comodato", "one_payment", "installments"],
+      enum: Object.values(PURCHASE_TYPE),
       required: true,
     },
     // Campos para el control de cuotas
@@ -47,8 +57,8 @@ const antennaSchema = new mongoose.Schema(
     // Estado de la antena
     status: {
       type: String,
-      enum: ["active", "inactive"],
-      default: "inactive",
+      enum: Object.values(ANTENNA_STATUS),
+      default: ANTENNA_STATUS.INACTIVE,
     },
     // Plan asociado (solo si está activada)
     plan: {
@@ -77,11 +87,33 @@ const antennaSchema = new mongoose.Schema(
   }
 );
 
+// Validación: tipo de antena debe estar disponible para el proveedor
+antennaSchema.pre("save", async function (next) {
+  // Populate supplier para obtener los tipos disponibles
+  await this.populate("supplier");
+
+  const availableTypes = this.supplier?.antennaTypes || [];
+  const antennaType = this.type;
+
+  // Validar que el tipo de antena esté en la lista del proveedor
+  if (!availableTypes.includes(antennaType)) {
+    return next(
+      new Error(
+        `El tipo de antena '${antennaType}' no está disponible para el proveedor '${
+          this.supplier?.name
+        }'. Tipos disponibles: ${availableTypes.join(", ")}`
+      )
+    );
+  }
+
+  next();
+});
+
 // Validación personalizada: si está activada, debe tener un plan
 antennaSchema.pre("save", function (next) {
-  if (this.status === "active" && !this.plan) {
+  if (this.status === ANTENNA_STATUS.ACTIVE && !this.plan) {
     next(new Error("Una antena activada debe tener un plan asignado"));
-  } else if (this.status === "inactive") {
+  } else if (this.status === ANTENNA_STATUS.INACTIVE) {
     this.plan = null;
   }
   next();
@@ -89,7 +121,10 @@ antennaSchema.pre("save", function (next) {
 
 // Validación: si es en cuotas, debe tener totalInstallments > 0
 antennaSchema.pre("save", function (next) {
-  if (this.purchaseType === "installments" && this.totalInstallments <= 0) {
+  if (
+    this.purchaseType === PURCHASE_TYPE.INSTALLMENTS &&
+    this.totalInstallments <= 0
+  ) {
     next(
       new Error(
         "Si la forma de compra es en cuotas, debe especificar la cantidad de cuotas totales"

@@ -1,4 +1,6 @@
 import AntennaModel from "./antenna.model.js";
+import { ANTENNA_STATUS } from "./antenna.constants.js";
+import { PURCHASE_TYPE } from "./antenna.constants.js";
 
 class AntennaDAO {
   /**
@@ -133,7 +135,7 @@ class AntennaDAO {
       const antenna = await AntennaModel.findByIdAndUpdate(
         id,
         {
-          status: "active",
+          status: ANTENNA_STATUS.ACTIVE,
           plan: planId,
           activationDate: new Date(),
           deactivationDate: null,
@@ -157,7 +159,7 @@ class AntennaDAO {
       const antenna = await AntennaModel.findByIdAndUpdate(
         id,
         {
-          status: "inactive",
+          status: ANTENNA_STATUS.INACTIVE,
           plan: null,
           deactivationDate: new Date(),
         },
@@ -180,7 +182,7 @@ class AntennaDAO {
       const antenna = await AntennaModel.findById(id);
       if (!antenna) throw new Error("Antena no encontrada");
 
-      if (antenna.purchaseType !== "installments") {
+      if (antenna.purchaseType !== PURCHASE_TYPE.INSTALLMENTS) {
         throw new Error("Esta antena no fue adquirida en cuotas");
       }
 
