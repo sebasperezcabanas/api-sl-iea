@@ -102,13 +102,6 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 🔍 LOG TEMPORAL: Datos recibidos
-    console.log("=== LOGIN ATTEMPT ===");
-    console.log("📧 Email recibido:", email);
-    console.log("🔑 Password recibido:", password);
-    console.log("📝 Tipo de email:", typeof email);
-    console.log("📝 Tipo de password:", typeof password);
-
     // Validar datos requeridos
     if (!email || !password) {
       return res
@@ -118,31 +111,13 @@ export const loginUser = async (req, res) => {
 
     // Buscar usuario usando el DAO
     const user = await User.findOne({ email });
-
-    // 🔍 LOG TEMPORAL: Usuario encontrado
-    console.log("👤 Usuario encontrado:", user ? "SÍ" : "NO");
-    if (user) {
-      console.log("📧 Email en DB:", user.email);
-      console.log("🔐 Hash en DB:", user.password);
-      console.log("👤 Username:", user.username);
-      console.log("🎭 Role:", user.role);
-    }
-
     if (!user) {
-      console.log("❌ Usuario NO encontrado con email:", email);
       return res.status(401).json({ message: "Usuario o contraseña inválida" });
     }
 
     // Verificar contraseña
     const isMatch = bcrypt.compareSync(password, user.password);
-
-    // 🔍 LOG TEMPORAL: Comparación de contraseñas
-    console.log("🔐 Password match:", isMatch);
-    console.log("🔑 Password enviado:", password);
-    console.log("🔐 Hash almacenado:", user.password);
-
     if (!isMatch) {
-      console.log("❌ Contraseña NO coincide");
       return res.status(401).json({ message: "Usuario o contraseña inválida" });
     }
 
