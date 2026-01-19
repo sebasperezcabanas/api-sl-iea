@@ -6,7 +6,7 @@ export const requestStatusTemplate = (userName, requestId, newStatus) => {
     <p>Puedes ver más detalles en tu panel de control.</p>
     <br>
     <p>Saludos,</p>
-    <p>El equipo de SL IEA</p>
+    <p>IEA S.R.L</p>
   `;
 
   const text = `
@@ -19,7 +19,7 @@ export const requestStatusTemplate = (userName, requestId, newStatus) => {
     Puedes ver más detalles en tu panel de control.
     
     Saludos,
-    El equipo de SL IEA
+    IEA S.R.L
   `;
 
   return { html, text };

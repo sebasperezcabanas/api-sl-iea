@@ -51,6 +51,12 @@ const requestSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Usuario que completó la solicitud
+    completedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     // Fecha de completado
     completedAt: {
       type: Date,

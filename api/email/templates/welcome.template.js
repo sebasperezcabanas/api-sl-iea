@@ -6,7 +6,7 @@ export const welcomeTemplate = (userName) => {
     <p>Estamos encantados de tenerte con nosotros.</p>
     <br>
     <p>Saludos,</p>
-    <p>El equipo de SL IEA</p>
+    <p>El equipo de IEA S.R.L</p>
   `;
 
   const text = `
@@ -18,7 +18,7 @@ export const welcomeTemplate = (userName) => {
     Estamos encantados de tenerte con nosotros.
     
     Saludos,
-    El equipo de SL IEA
+    El equipo de IEA S.R.L
   `;
 
   return { html, text };

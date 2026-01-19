@@ -192,14 +192,30 @@ export const updateRequest = async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
+    console.log("📝 updateRequest - Params:", { id });
+    console.log("📝 updateRequest - Body recibido:", updateData);
+
     // Si se está asignando un processedBy, registrar la fecha de inicio
     if (updateData.processedBy && !updateData.startedAt) {
       updateData.startedAt = new Date();
+      console.log("⏰ Registrando fecha de inicio (startedAt)");
     }
 
     // Si se está completando, registrar la fecha de completado
     if (updateData.status === "completed" && !updateData.completedAt) {
       updateData.completedAt = new Date();
+      console.log("⏰ Registrando fecha de completado (completedAt)");
+    }
+
+    // Si se está completando y se proporciona completedBy, guardarlo
+    if (updateData.status === "completed" && updateData.completedBy) {
+      updateData.completedBy = updateData.completedBy;
+      console.log("👤 Registrando completedBy:", updateData.completedBy);
+    }
+
+    // Si se proporciona newPlan, guardarlo
+    if (updateData.newPlan) {
+      console.log("📋 Actualizando newPlan:", updateData.newPlan);
     }
 
     const request = await Request.update(id, updateData);
@@ -207,6 +223,13 @@ export const updateRequest = async (req, res) => {
     if (!request) {
       return res.status(404).json({ message: "Solicitud no encontrada" });
     }
+
+    console.log("✅ Request actualizada:", {
+      id: request._id,
+      type: request.type,
+      status: request.status,
+      newPlan: request.newPlan,
+    });
 
     // Obtener el clientId (puede ser un objeto poblado o un ID)
     const clientId = request.client._id || request.client;
@@ -234,7 +257,14 @@ export const updateRequest = async (req, res) => {
 export const updateRequestStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, processedBy } = req.body;
+    const { status, processedBy, completedBy } = req.body;
+
+    console.log("📥 updateRequestStatus - Params:", { id });
+    console.log("📥 updateRequestStatus - Body:", {
+      status,
+      processedBy,
+      completedBy,
+    });
 
     if (!status) {
       return res.status(400).json({
@@ -257,8 +287,39 @@ export const updateRequestStatus = async (req, res) => {
       return res.status(404).json({ message: "Solicitud no encontrada" });
     }
 
+    console.log("📋 Request actual:", {
+      id: currentRequest._id,
+      type: currentRequest.type,
+      status: currentRequest.status,
+      antenna: currentRequest.antenna,
+      plan: currentRequest.plan,
+      newPlan: currentRequest.newPlan,
+    });
+
+    // Si se está completando la solicitud, ejecutar la acción correspondiente
+    if (status === "completed") {
+      console.log("🔄 Ejecutando acción para completar solicitud...");
+      try {
+        await executeRequestAction(currentRequest);
+        console.log("✅ Acción ejecutada exitosamente");
+      } catch (actionError) {
+        console.error(
+          "❌ Error al ejecutar acción de solicitud:",
+          actionError.message
+        );
+        return res.status(500).json({
+          message: `Error al ejecutar la acción: ${actionError.message}`,
+        });
+      }
+    }
+
     const previousStatus = currentRequest.status;
-    const request = await Request.updateStatus(id, status, processedBy);
+    const request = await Request.updateStatus(
+      id,
+      status,
+      processedBy,
+      completedBy
+    );
 
     // Obtener el clientId (puede ser un objeto poblado o un ID)
     const clientId = request.client._id || request.client;
@@ -277,6 +338,96 @@ export const updateRequestStatus = async (req, res) => {
   } catch (err) {
     console.error("❌ Error al actualizar estado de solicitud:", err.message);
     res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+/**
+ * Ejecutar la acción correspondiente según el tipo de solicitud
+ */
+const executeRequestAction = async (request) => {
+  const { type, antenna, newPlan } = request;
+
+  console.log("🔧 executeRequestAction - Datos recibidos:", {
+    type,
+    antenna: antenna?._id || antenna,
+    antennaKitNumber: antenna?.kitNumber,
+    newPlan: newPlan?._id || newPlan,
+    newPlanName: newPlan?.name,
+  });
+
+  if (!antenna) {
+    throw new Error("La solicitud no tiene una antena asociada");
+  }
+
+  switch (type) {
+    case REQUEST_TYPES.ACTIVATE:
+      console.log("🟢 Caso ACTIVATE");
+      // Activar la antena con el nuevo plan
+      if (!newPlan) {
+        throw new Error("Se requiere un plan para activar la antena");
+      }
+      const antennaIdActivate = antenna._id || antenna;
+      const planIdActivate = newPlan._id || newPlan;
+      console.log(
+        `→ Activando antena ${
+          antenna.kitNumber || antennaIdActivate
+        } con plan ${newPlan.name || planIdActivate}`
+      );
+      const activatedAntenna = await Antenna.activate(
+        antennaIdActivate,
+        planIdActivate
+      );
+      console.log(`✅ Antena activada exitosamente:`, {
+        id: activatedAntenna._id,
+        kitNumber: activatedAntenna.kitNumber,
+        status: activatedAntenna.status,
+        plan: activatedAntenna.plan,
+      });
+      break;
+
+    case REQUEST_TYPES.DEACTIVATE:
+      console.log("🔴 Caso DEACTIVATE");
+      // Desactivar la antena
+      const antennaIdDeactivate = antenna._id || antenna;
+      console.log(
+        `→ Desactivando antena ${antenna.kitNumber || antennaIdDeactivate}`
+      );
+      const deactivatedAntenna = await Antenna.deactivate(antennaIdDeactivate);
+      console.log(`✅ Antena desactivada exitosamente:`, {
+        id: deactivatedAntenna._id,
+        kitNumber: deactivatedAntenna.kitNumber,
+        status: deactivatedAntenna.status,
+        plan: deactivatedAntenna.plan,
+      });
+      break;
+
+    case REQUEST_TYPES.CHANGE_PLAN:
+      console.log("🔄 Caso CHANGE_PLAN");
+      // Cambiar el plan de la antena
+      if (!newPlan) {
+        throw new Error("Se requiere un nuevo plan para cambiar el plan");
+      }
+      const antennaIdChange = antenna._id || antenna;
+      const planIdChange = newPlan._id || newPlan;
+      console.log(
+        `→ Cambiando plan de antena ${antenna.kitNumber || antennaIdChange} a ${
+          newPlan.name || planIdChange
+        }`
+      );
+      // Para cambiar plan, actualizamos directamente el plan de la antena
+      const updatedAntenna = await Antenna.updateById(antennaIdChange, {
+        plan: planIdChange,
+      });
+      console.log(`✅ Plan de antena cambiado exitosamente:`, {
+        id: updatedAntenna._id,
+        kitNumber: updatedAntenna.kitNumber,
+        status: updatedAntenna.status,
+        plan: updatedAntenna.plan,
+      });
+      break;
+
+    default:
+      throw new Error(`Tipo de solicitud no reconocido: ${type}`);
   }
 };
 

@@ -19,6 +19,7 @@ class Request {
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
       .populate("processedBy", "username email")
+      .populate("completedBy", "username email")
       .sort({ createdAt: -1 });
   }
 
@@ -31,7 +32,8 @@ class Request {
       .populate("antenna", "kitNumber name status")
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
-      .populate("processedBy", "username email");
+      .populate("processedBy", "username email")
+      .populate("completedBy", "username email");
   }
 
   /**
@@ -43,6 +45,7 @@ class Request {
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
       .populate("processedBy", "username email")
+      .populate("completedBy", "username email")
       .sort({ createdAt: -1 });
   }
 
@@ -56,6 +59,7 @@ class Request {
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
       .populate("processedBy", "username email")
+      .populate("completedBy", "username email")
       .sort({ createdAt: -1 });
   }
 
@@ -69,6 +73,7 @@ class Request {
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
       .populate("processedBy", "username email")
+      .populate("completedBy", "username email")
       .sort({ createdAt: -1 });
   }
 
@@ -84,13 +89,19 @@ class Request {
       .populate("antenna", "kitNumber name status")
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
-      .populate("processedBy", "username email");
+      .populate("processedBy", "username email")
+      .populate("completedBy", "username email");
   }
 
   /**
    * Cambiar estado de una solicitud
    */
-  static async updateStatus(id, status, processedBy = null) {
+  static async updateStatus(
+    id,
+    status,
+    processedBy = null,
+    completedBy = null
+  ) {
     const updateData = { status };
 
     // Si se asigna un admin y no se había asignado antes, registrar fecha de inicio
@@ -102,9 +113,12 @@ class Request {
       updateData.processedBy = processedBy;
     }
 
-    // Si se completa la solicitud, registrar fecha de completado
+    // Si se completa la solicitud, registrar fecha de completado y quién la completó
     if (status === "completed") {
       updateData.completedAt = new Date();
+      if (completedBy) {
+        updateData.completedBy = completedBy;
+      }
     }
 
     return await RequestModel.findByIdAndUpdate(id, updateData, {
@@ -115,7 +129,8 @@ class Request {
       .populate("antenna", "kitNumber name status")
       .populate("plan", "name dataAmount price")
       .populate("newPlan", "name dataAmount price")
-      .populate("processedBy", "username email");
+      .populate("processedBy", "username email")
+      .populate("completedBy", "username email");
   }
 
   /**
