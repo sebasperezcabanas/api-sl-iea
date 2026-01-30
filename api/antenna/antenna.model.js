@@ -81,10 +81,26 @@ const antennaSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Campos específicos para Starlink
+    subscriptionId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    starlinkId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    accountNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Validación: tipo de antena debe estar disponible para el proveedor
@@ -101,8 +117,8 @@ antennaSchema.pre("save", async function (next) {
       new Error(
         `El tipo de antena '${antennaType}' no está disponible para el proveedor '${
           this.supplier?.name
-        }'. Tipos disponibles: ${availableTypes.join(", ")}`
-      )
+        }'. Tipos disponibles: ${availableTypes.join(", ")}`,
+      ),
     );
   }
 
@@ -113,8 +129,6 @@ antennaSchema.pre("save", async function (next) {
 antennaSchema.pre("save", function (next) {
   if (this.status === ANTENNA_STATUS.ACTIVE && !this.plan) {
     next(new Error("Una antena activada debe tener un plan asignado"));
-  } else if (this.status === ANTENNA_STATUS.INACTIVE) {
-    this.plan = null;
   }
   next();
 });
@@ -127,8 +141,8 @@ antennaSchema.pre("save", function (next) {
   ) {
     next(
       new Error(
-        "Si la forma de compra es en cuotas, debe especificar la cantidad de cuotas totales"
-      )
+        "Si la forma de compra es en cuotas, debe especificar la cantidad de cuotas totales",
+      ),
     );
   }
   next();

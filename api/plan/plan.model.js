@@ -23,6 +23,12 @@ const planSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      required: true,
+      enum: ["USD", "ARS"],
+      default: "USD",
+    },
     active: {
       type: Boolean,
       default: true,
@@ -30,7 +36,7 @@ const planSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Índice compuesto único: un proveedor no puede tener dos planes con el mismo nombre y cantidad de datos

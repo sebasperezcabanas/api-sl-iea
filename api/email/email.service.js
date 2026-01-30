@@ -22,6 +22,9 @@ const mailerSend = new MailerSend({
  * @param {string} emailData.text - Contenido en texto plano del email
  * @param {string} [emailData.from] - Email del remitente (opcional, usa default)
  * @param {string} [emailData.fromName] - Nombre del remitente (opcional, usa default)
+ * @param {Array<Object>} [emailData.cc] - Array de destinatarios en copia (opcional)
+ * @param {string} emailData.cc[].email - Email del destinatario en CC
+ * @param {string} [emailData.cc[].name] - Nombre del destinatario en CC (opcional)
  * @returns {Promise<Object>} Respuesta de MailerSend
  */
 export const sendEmail = async (emailData) => {
@@ -34,12 +37,13 @@ export const sendEmail = async (emailData) => {
       text,
       from = config.EMAIL_FROM,
       fromName = config.EMAIL_FROM_NAME,
+      cc,
     } = emailData;
 
     // Validar campos requeridos
     if (!to || !subject || (!html && !text)) {
       throw new Error(
-        "Faltan campos requeridos: to, subject y al menos html o text"
+        "Faltan campos requeridos: to, subject y al menos html o text",
       );
     }
 
@@ -55,6 +59,39 @@ export const sendEmail = async (emailData) => {
       .setTo(recipients)
       // .setReplyTo(sentFrom)
       .setSubject(subject);
+
+    // Debug: ver qué llega en cc
+    console.log(
+      "🔍 CC recibido:",
+      cc,
+      "Tipo:",
+      typeof cc,
+      "Es array:",
+      Array.isArray(cc),
+    );
+
+    // Agregar destinatarios en CC si existen
+    if (cc) {
+      let ccRecipients = [];
+
+      if (typeof cc === "string") {
+        // Si es un string, crear un array con un solo destinatario
+        ccRecipients = [new Recipient(cc, cc)];
+      } else if (Array.isArray(cc) && cc.length > 0) {
+        // Si es un array, procesar cada destinatario
+        ccRecipients = cc.map(
+          (ccItem) => new Recipient(ccItem.email, ccItem.name || ccItem.email),
+        );
+      }
+
+      if (ccRecipients.length > 0) {
+        emailParams.setCc(ccRecipients);
+        console.log(
+          "📧 CC configurados:",
+          ccRecipients.map((r) => r.email).join(", "),
+        );
+      }
+    }
 
     // Agregar contenido HTML si existe
     if (html) {
@@ -109,7 +146,7 @@ export const sendRequestStatusEmail = async (
   userEmail,
   userName,
   requestId,
-  newStatus
+  newStatus,
 ) => {
   const { html, text } = requestStatusTemplate(userName, requestId, newStatus);
 

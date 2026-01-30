@@ -6,12 +6,13 @@ import Supplier from "../supplier/supplier.dao.js";
  */
 export const createPlan = async (req, res) => {
   try {
-    const { name, supplier, dataAmount, price } = req.body;
+    const { name, supplier, dataAmount, price, currency } = req.body;
 
     // Validar campos requeridos
-    if (!name || !supplier || !dataAmount || price === undefined) {
+    if (!name || !supplier || !dataAmount || price === undefined || !currency) {
       return res.status(400).json({
-        message: "Nombre, proveedor, cantidad de datos y precio son requeridos",
+        message:
+          "Nombre, proveedor, cantidad de datos, precio y moneda son requeridos",
       });
     }
 
@@ -23,12 +24,20 @@ export const createPlan = async (req, res) => {
       });
     }
 
+    // Validar que currency sea USD o ARS
+    if (!["USD", "ARS"].includes(currency)) {
+      return res.status(400).json({
+        message: "La moneda debe ser USD o ARS",
+      });
+    }
+
     // Crear plan
     const plan = await Plan.create({
       name,
       supplier,
       dataAmount,
       price,
+      currency,
     });
 
     res.status(201).json(plan);
@@ -114,6 +123,13 @@ export const updatePlan = async (req, res) => {
           message: "El proveedor especificado no existe",
         });
       }
+    }
+
+    // Si se está cambiando la moneda, validar que sea USD o ARS
+    if (updateData.currency && !["USD", "ARS"].includes(updateData.currency)) {
+      return res.status(400).json({
+        message: "La moneda debe ser USD o ARS",
+      });
     }
 
     const plan = await Plan.updateById(id, updateData);

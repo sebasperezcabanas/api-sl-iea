@@ -140,7 +140,7 @@ class AntennaDAO {
           activationDate: new Date(),
           deactivationDate: null,
         },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       )
         .populate("client", "-password")
         .populate("supplier")
@@ -160,10 +160,9 @@ class AntennaDAO {
         id,
         {
           status: ANTENNA_STATUS.INACTIVE,
-          plan: null,
           deactivationDate: new Date(),
         },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       )
         .populate("client", "-password")
         .populate("supplier")

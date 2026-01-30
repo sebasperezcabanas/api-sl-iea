@@ -23,6 +23,9 @@ export const createAntenna = async (req, res) => {
       activationDate,
       deactivationDate,
       notes,
+      subscriptionId,
+      starlinkId,
+      accountNumber,
     } = req.body;
 
     // Validar campos requeridos
@@ -94,6 +97,9 @@ export const createAntenna = async (req, res) => {
     if (status) antennaData.status = status;
     if (activationDate) antennaData.activationDate = activationDate;
     if (deactivationDate) antennaData.deactivationDate = deactivationDate;
+    if (subscriptionId) antennaData.subscriptionId = subscriptionId;
+    if (starlinkId) antennaData.starlinkId = starlinkId;
+    if (accountNumber) antennaData.accountNumber = accountNumber;
 
     if (purchaseType === PURCHASE_TYPE.INSTALLMENTS) {
       antennaData.totalInstallments = totalInstallments;

@@ -9,7 +9,7 @@ import {
  */
 export const send = async (req, res) => {
   try {
-    const { to, toName, subject, html, text, from, fromName } = req.body;
+    const { to, toName, subject, html, text, from, fromName, cc } = req.body;
 
     // Validar campos requeridos
     if (!to || !subject || (!html && !text)) {
@@ -26,6 +26,7 @@ export const send = async (req, res) => {
       text,
       from,
       fromName,
+      cc,
     });
 
     res.status(200).json(result);
