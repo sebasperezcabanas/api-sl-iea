@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { CLIENT_TYPE, ROLE } from "./auth.constants.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -21,12 +22,12 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "user"],
-      default: "user",
+      enum: Object.values(ROLE),
+      default: ROLE.USER,
     },
     clientType: {
       type: String,
-      enum: ["PNA", "PRIVADOS", "IEA"],
+      enum: Object.values(CLIENT_TYPE),
       required: true,
     },
     createdAt: {
@@ -53,16 +54,20 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    signatureImageUrl: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Middleware para establecer clientType = IEA cuando role = admin
 userSchema.pre("save", function (next) {
-  if (this.role === "admin" && !this.clientType) {
-    this.clientType = "IEA";
+  if (this.role === ROLE.ADMIN && !this.clientType) {
+    this.clientType = CLIENT_TYPE.IEA;
   }
   next();
 });

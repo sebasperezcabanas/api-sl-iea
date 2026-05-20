@@ -11,7 +11,11 @@ const config = {
   EMAIL_FROM: process.env.EMAIL_FROM || "info@domain.com",
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || "SL IEA",
   // URL del frontend para enlaces de reset password
-  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:4200",
+  // Cloudinary - almacenamiento de imágenes de firma
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 };
 
 export default config;

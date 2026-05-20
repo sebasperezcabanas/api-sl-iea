@@ -33,6 +33,17 @@ const planSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    voucherIncludedInPlan: {
+      type: Boolean,
+      default: false,
+      // Indica si el voucher está incluido en el precio del abono
+    },
+    voucherAmount: {
+      type: Number,
+      min: 0,
+      default: 0,
+      // Monto del voucher cuando no está incluido en el abono (voucherIncludedInPlan = false)
+    },
   },
   {
     timestamps: true,

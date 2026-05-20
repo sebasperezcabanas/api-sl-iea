@@ -3,20 +3,26 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import config from "../config.js";
+import { CLIENT_TYPE, ROLE } from "./auth.constants.js";
 import {
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
 } from "../email/email.service.js";
+import {
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+} from "../upload/upload.service.js";
 
-const { JWT_SECRET } = config;
+const { JWT_SECRET, JWT_EXPIRES_IN } = config;
 
-const generateToken = (userId, expiresIn = 24 * 60 * 60) => {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn });
+const generateToken = (userId, username, expiresIn = JWT_EXPIRES_IN) => {
+  return jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn });
 };
 
 export const createUser = async (req, res) => {
   try {
-    const { username, email, password, role, clientType } = req.body;
+    const { username, email, password, role, clientType, signatureImageUrl } =
+      req.body;
 
     if (!username || !email || !password) {
       return res
@@ -55,20 +61,22 @@ export const createUser = async (req, res) => {
       password: hashedPassword,
       role: role || "user",
       clientType: role === "admin" ? "IEA" : clientType,
+      ...(signatureImageUrl && { signatureImageUrl }),
     };
 
     const user = await User.create(userData);
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.username);
 
     res.status(201).json({
       username: user.username,
       email: user.email,
       role: user.role,
       clientType: user.clientType,
+      signatureImageUrl: user.signatureImageUrl || null,
       createdAt: user.createdAt,
       accessToken: token,
-      expiresIn: 24 * 60 * 60,
+      expiresIn: JWT_EXPIRES_IN,
     });
   } catch (err) {
     console.error("❌ Error al crear usuario:", err.message);
@@ -121,7 +129,15 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Usuario o contraseña inválida" });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.username);
+
+    if (user.signatureImageUrl) {
+      console.log(
+        `✅ Usuario ${user.email} tiene imagen de firma: ${user.signatureImageUrl}`,
+      );
+    } else {
+      console.log(`⚠️ Usuario ${user.email} no tiene imagen de firma`);
+    }
 
     res.json({
       _id: user._id,
@@ -129,11 +145,12 @@ export const loginUser = async (req, res) => {
       email: user.email,
       role: user.role,
       clientType: user.clientType,
+      signatureImageUrl: user.signatureImageUrl || null,
       accessToken: token,
-      expiresIn: 24 * 60 * 60,
+      expiresIn: JWT_EXPIRES_IN,
     });
 
-    console.log("✅ Usuario logueado:", user.email);
+    console.log("✅ Usuario logueado !:", user.email);
   } catch (err) {
     console.error("❌ Error en login:", err.message);
     res.status(500).json({ message: "Error interno del servidor" });
@@ -252,6 +269,7 @@ export const updateUser = async (req, res) => {
       email: updatedUser.email,
       role: updatedUser.role,
       clientType: updatedUser.clientType,
+      signatureImageUrl: updatedUser.signatureImageUrl || null,
       createdAt: updatedUser.createdAt,
     });
   } catch (err) {
@@ -290,6 +308,14 @@ export const deleteUser = async (req, res) => {
     console.error("❌ Error al eliminar usuario:", err.message);
     res.status(500).json({ message: "Error al eliminar usuario" });
   }
+};
+
+// Obtener enums disponibles (para el frontend)
+export const getEnums = (req, res) => {
+  res.json({
+    clientTypes: Object.values(CLIENT_TYPE),
+    roles: Object.values(ROLE),
+  });
 };
 
 // Validar complejidad de contraseña
@@ -449,7 +475,7 @@ export const resetPassword = async (req, res) => {
     } catch (emailError) {
       console.error(
         "❌ Error al enviar email de confirmación:",
-        emailError.message
+        emailError.message,
       );
       // Continuar aunque falle el email
     }
@@ -462,5 +488,75 @@ export const resetPassword = async (req, res) => {
   } catch (err) {
     console.error("❌ Error en resetPassword:", err.message);
     res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+// Subir o reemplazar imagen de firma del usuario
+export const uploadSignatureImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No se recibió ninguna imagen" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Si ya tenía una imagen anterior en Cloudinary, eliminarla
+    if (user.signatureImageUrl) {
+      await deleteImageFromCloudinary(user.signatureImageUrl);
+    }
+
+    // Subir nueva imagen a Cloudinary en la carpeta signatures/
+    const publicId = `user_${id}`;
+    const imageUrl = await uploadImageToCloudinary(
+      req.file.buffer,
+      "signatures",
+      publicId,
+    );
+
+    // Guardar la URL en el usuario
+    await User.updateById(id, { signatureImageUrl: imageUrl });
+
+    console.log(`✅ Firma actualizada para usuario ${id}: ${imageUrl}`);
+
+    res.json({
+      success: true,
+      signatureImageUrl: imageUrl,
+    });
+  } catch (err) {
+    console.error("❌ Error al subir imagen de firma:", err.message);
+    res.status(500).json({ message: "Error al subir la imagen" });
+  }
+};
+
+// Eliminar imagen de firma del usuario
+export const deleteSignatureImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    if (!user.signatureImageUrl) {
+      return res
+        .status(404)
+        .json({ message: "El usuario no tiene imagen de firma" });
+    }
+
+    await deleteImageFromCloudinary(user.signatureImageUrl);
+    await User.updateById(id, { signatureImageUrl: null });
+
+    console.log(`✅ Firma eliminada para usuario ${id}`);
+
+    res.json({ success: true, message: "Imagen de firma eliminada" });
+  } catch (err) {
+    console.error("❌ Error al eliminar imagen de firma:", err.message);
+    res.status(500).json({ message: "Error al eliminar la imagen" });
   }
 };

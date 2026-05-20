@@ -6,6 +6,7 @@ import planRoutes from "./plan/plan.routes.js";
 import antennaRoutes from "./antenna/antenna.routes.js";
 import requestRoutes from "./request/request.routes.js";
 import emailRoutes from "./email/email.routes.js";
+import exchangeRoutes from "./exchange/exchange.routes.js";
 import connectDB from "./db/database.js";
 import config from "./config.js";
 import cors from "cors";
@@ -42,6 +43,9 @@ app.use("/requests", requestRoutes);
 // Rutas de email
 app.use("/email", emailRoutes);
 
+// Rutas de tipo de cambio
+app.use("/exchange", exchangeRoutes);
+
 // Ruta raíz para verificar que la API está funcionando
 app.get("/", (req, res) => {
   res.json({
@@ -54,6 +58,7 @@ app.get("/", (req, res) => {
       antennas: "/antennas",
       requests: "/requests",
       email: "/email (send, welcome, request-status)",
+      exchange: "/exchange (dolar-ccl, dolar-ccl/venta)",
     },
     websocket: "Socket.IO habilitado para notificaciones en tiempo real",
   });

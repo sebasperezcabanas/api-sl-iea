@@ -29,6 +29,7 @@ export const initializeSocket = (server) => {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       socket.userId = decoded.id;
+      socket.username = decoded.username;
       next();
     } catch (err) {
       return next(new Error("Token inválido o expirado"));
@@ -36,7 +37,9 @@ export const initializeSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`✅ Cliente conectado: ${socket.id} (User: ${socket.userId})`);
+    console.log(
+      `✅ Cliente conectado: ${socket.id} (User: ${socket.username})`,
+    );
 
     // El cliente se une a una sala según su rol
     socket.on("join", (data) => {
@@ -45,7 +48,7 @@ export const initializeSocket = (server) => {
       // Verificar que el userId coincida con el del token
       if (userId !== socket.userId) {
         console.log(
-          `⚠️ Intento de unirse con userId diferente al del token. Token: ${socket.userId}, Enviado: ${userId}`
+          `⚠️ Intento de unirse con userId diferente al del token. Token: ${socket.userId}, Enviado: ${userId}`,
         );
         return;
       }
@@ -106,7 +109,7 @@ export const notifyAdminsNewRequest = (request) => {
 
   io.to("admins").emit("notification", notification);
   console.log(
-    `📢 Notificación enviada a administradores: Nueva solicitud ${request._id}`
+    `📢 Notificación enviada a administradores: Nueva solicitud ${request._id}`,
   );
 };
 
@@ -121,7 +124,7 @@ export const notifyClientRequestUpdate = (clientId, request) => {
   const notification = {
     type: "request_update",
     message: `Tu solicitud ha sido actualizada: ${getStatusLabel(
-      request.status
+      request.status,
     )}`,
     request: {
       _id: request._id,
@@ -144,7 +147,7 @@ export const notifyClientRequestUpdate = (clientId, request) => {
   // Notificar al cliente
   io.to(`user_${clientId}`).emit("notification", notification);
   console.log(
-    `📢 Notificación enviada al cliente ${clientId}: Solicitud actualizada`
+    `📢 Notificación enviada al cliente ${clientId}: Solicitud actualizada`,
   );
 
   // También notificar a los admins
@@ -171,7 +174,7 @@ export const notifyClientRequestUpdate = (clientId, request) => {
 
   io.to("admins").emit("notification", adminNotification);
   console.log(
-    `📢 Notificación enviada a administradores: Solicitud actualizada`
+    `📢 Notificación enviada a administradores: Solicitud actualizada`,
   );
 };
 
@@ -183,14 +186,14 @@ export const notifyClientRequestUpdate = (clientId, request) => {
 export const notifyRequestStatusChange = (
   clientId,
   request,
-  previousStatus
+  previousStatus,
 ) => {
   if (!io) return;
 
   const notification = {
     type: "request_status_change",
     message: `El estado de tu solicitud cambió de "${getStatusLabel(
-      previousStatus
+      previousStatus,
     )}" a "${getStatusLabel(request.status)}"`,
     request: {
       _id: request._id,
@@ -214,14 +217,14 @@ export const notifyRequestStatusChange = (
   // Notificar al cliente
   io.to(`user_${clientId}`).emit("notification", notification);
   console.log(
-    `📢 Notificación de cambio de estado enviada al cliente ${clientId}`
+    `📢 Notificación de cambio de estado enviada al cliente ${clientId}`,
   );
 
   // También notificar a los admins
   const adminNotification = {
     type: "request_status_change",
     message: `Estado de solicitud ${request._id} cambió a "${getStatusLabel(
-      request.status
+      request.status,
     )}"`,
     request: {
       _id: request._id,

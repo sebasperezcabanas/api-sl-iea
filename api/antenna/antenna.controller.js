@@ -18,6 +18,11 @@ export const createAntenna = async (req, res) => {
       purchaseType,
       totalInstallments,
       installmentAmount,
+      installmentAmountCurrency,
+      paidInstallments,
+      firstInstallmentDate,
+      suspensionCost,
+      suspensionCostCurrency,
       plan,
       status,
       activationDate,
@@ -100,11 +105,19 @@ export const createAntenna = async (req, res) => {
     if (subscriptionId) antennaData.subscriptionId = subscriptionId;
     if (starlinkId) antennaData.starlinkId = starlinkId;
     if (accountNumber) antennaData.accountNumber = accountNumber;
+    if (suspensionCost !== undefined)
+      antennaData.suspensionCost = suspensionCost;
+    if (suspensionCostCurrency)
+      antennaData.suspensionCostCurrency = suspensionCostCurrency;
 
     if (purchaseType === PURCHASE_TYPE.INSTALLMENTS) {
       antennaData.totalInstallments = totalInstallments;
       antennaData.installmentAmount = installmentAmount || 0;
-      antennaData.paidInstallments = 0;
+      if (installmentAmountCurrency)
+        antennaData.installmentAmountCurrency = installmentAmountCurrency;
+      antennaData.paidInstallments = paidInstallments || 0;
+      if (firstInstallmentDate)
+        antennaData.firstInstallmentDate = firstInstallmentDate;
     }
 
     const antenna = await Antenna.create(antennaData);
@@ -220,6 +233,26 @@ export const updateAntenna = async (req, res) => {
           message: "El proveedor especificado no existe",
         });
       }
+    }
+
+    // Validar suspensionCost si se proporciona
+    if (
+      updateData.suspensionCost !== undefined &&
+      updateData.suspensionCost < 0
+    ) {
+      return res.status(400).json({
+        message: "El costo de suspensión no puede ser negativo",
+      });
+    }
+
+    // Validar installmentAmount si se proporciona
+    if (
+      updateData.installmentAmount !== undefined &&
+      updateData.installmentAmount < 0
+    ) {
+      return res.status(400).json({
+        message: "El monto de la cuota no puede ser negativo",
+      });
     }
 
     const antenna = await Antenna.updateById(id, updateData);

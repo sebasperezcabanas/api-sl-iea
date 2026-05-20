@@ -6,7 +6,15 @@ import Supplier from "../supplier/supplier.dao.js";
  */
 export const createPlan = async (req, res) => {
   try {
-    const { name, supplier, dataAmount, price, currency } = req.body;
+    const {
+      name,
+      supplier,
+      dataAmount,
+      price,
+      currency,
+      voucherIncludedInPlan,
+      voucherAmount,
+    } = req.body;
 
     // Validar campos requeridos
     if (!name || !supplier || !dataAmount || price === undefined || !currency) {
@@ -38,6 +46,8 @@ export const createPlan = async (req, res) => {
       dataAmount,
       price,
       currency,
+      voucherIncludedInPlan,
+      voucherAmount,
     });
 
     res.status(201).json(plan);
@@ -129,6 +139,16 @@ export const updatePlan = async (req, res) => {
     if (updateData.currency && !["USD", "ARS"].includes(updateData.currency)) {
       return res.status(400).json({
         message: "La moneda debe ser USD o ARS",
+      });
+    }
+
+    // Validar voucherAmount si se proporciona
+    if (
+      updateData.voucherAmount !== undefined &&
+      updateData.voucherAmount < 0
+    ) {
+      return res.status(400).json({
+        message: "El monto del voucher no puede ser negativo",
       });
     }
 

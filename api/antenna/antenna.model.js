@@ -54,6 +54,27 @@ const antennaSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    installmentAmountCurrency: {
+      type: String,
+      enum: ["ARS", "USD"],
+      default: "ARS",
+    },
+    // Fecha de vencimiento de la primera cuota
+    firstInstallmentDate: {
+      type: Date,
+      default: null,
+    },
+    // Costo de suspensión (solo para comodato)
+    suspensionCost: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    suspensionCostCurrency: {
+      type: String,
+      enum: ["ARS", "USD"],
+      default: "ARS",
+    },
     // Estado de la antena
     status: {
       type: String,
@@ -143,6 +164,16 @@ antennaSchema.pre("save", function (next) {
       new Error(
         "Si la forma de compra es en cuotas, debe especificar la cantidad de cuotas totales",
       ),
+    );
+  }
+  next();
+});
+
+// Validación: suspensionCost solo aplica para comodato
+antennaSchema.pre("save", function (next) {
+  if (this.suspensionCost > 0 && this.purchaseType !== PURCHASE_TYPE.COMODATO) {
+    next(
+      new Error("El costo de suspensión solo aplica para antenas en comodato"),
     );
   }
   next();
